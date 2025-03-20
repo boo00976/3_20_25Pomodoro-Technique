@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>番茄時鐘</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            text-align: center; 
+            margin-top: 50px;
+            background-image: url(''); /* 替換為你的圖片路徑 */
+            background-size: cover; /* 讓背景圖片覆蓋整個頁面 */
+            background-position: center; /* 使圖片居中 */
+            background-repeat: no-repeat; /* 不重複顯示圖片 */
+            height: 100vh; /* 讓頁面高度填滿視窗 */
+        }
+        body { 
+    font-family: Arial, sans-serif; 
+    text-align: center; 
+    margin-top: 50px;
+    background-color: black; /* 設定背景為黑色 */
+    color: white; /* 讓文字變成白色，確保可讀性 */
+    height: 100vh; /* 讓背景填滿整個視窗 */
+}
+    </style>
+        <style>
+            body { font-family: Arial, sans-serif; text-align: center; margin-top: 50px; }
+            #timer { font-size: 60px; font-weight: bold; margin: 20px 0; }
+            #status { font-size: 20px; color: #4adbff; }
+            button { font-size: 18px; margin: 5px; padding: 10px 20px; cursor: pointer; }
+            .controls { margin-top: 20px; }
+            .settings { margin-top: 30px; font-size: 16px; }
+            input { width: 60px; font-size: 16px; text-align: center; margin-left: 10px; }
+            #log { margin-top: 30px; text-align: left; max-width: 400px; margin-left: auto; margin-right: auto; }
+            .log-item { background: #fdefef; padding: 8px; margin: 5px 0; border-left: 5px solid #ff6347; }
+        </style>
+</head>
+
+<!--現在時間 -->
+<body>
+    <h1 id="clock"></h1>
+    <script>
+        function updateClock() {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString();
+            document.getElementById("clock").textContent = timeString;
+        }
+
+        setInterval(updateClock, 1000);
+        updateClock();  // 立即顯示時間
+    </script>
+<!--現在時間 -->
+</body>
+
+<body>
+    <a href="https://github.com/boo00976" target="_blank" style="color: yellow;">
+        <h1>番茄時鐘</h1> </a>
+    
+    <h2 id="status">狀態：工作中</h2>
+    <div id="timer">25:00</div>
+
+    <div class="controls">
+        <button onclick="startTimer()">開始</button>
+        <button onclick="pauseTimer()">暫停</button>
+        <button onclick="resetTimer()">重置</button>
+        <button onclick="nextMode()" id="nextModeBtn" style="display: none;">下一個模式</button>
+    </div>
+
+    <div class="settings">
+        <label>工作時間 (分鐘): <input type="number" id="workTime" value="25" min="1"></label>
+        <label>休息時間 (分鐘): <input type="number" id="breakTime" value="5" min="1"></label>
+    </div>
+
+    <div id="log">
+        <h3>紀錄</h3>
+        <button onclick="clearLog()">清除紀錄</button>
+        <ul id="logList"></ul>
+    </div>
+
+    <!-- 鬧鈴 -->
+    <audio id="alarmSound" src="times_up音效.mp3"></audio>
+
+    <script>
+        let workMinutes = 25;
+        let breakMinutes = 5;
+        let secondsLeft = workMinutes * 60;
+        let isWorkTime = true;
+        let timerInterval;
+        let timerFinished = false;  // 計時是否完成
+
+        function updateTimerDisplay() {
+            let minutes = Math.floor(secondsLeft / 60);
+            let seconds = secondsLeft % 60;
+            document.getElementById("timer").textContent = 
+                `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        }
+
+        function startTimer() {
+            if (timerFinished) return; // 如果已經計時完成，就不再繼續
+            logAction("開始");
+            workMinutes = parseInt(document.getElementById("workTime").value);
+            breakMinutes = parseInt(document.getElementById("breakTime").value);
+            if (!timerInterval) {
+                timerInterval = setInterval(() => {
+                    if (secondsLeft > 0) {
+                        secondsLeft--;
+                        updateTimerDisplay();
+                    } else {
+                        timerFinished = true;
+                        clearInterval(timerInterval);
+                        timerInterval = null;
+                        document.getElementById("alarmSound").play(); // 播放音效
+                        document.getElementById("nextModeBtn").style.display = "inline-block"; // 顯示「下一個模式」按鈕
+                    }
+                }, 1000);
+            }
+        }
+
+        function pauseTimer() {
+            logAction("停止");
+            clearInterval(timerInterval);
+            timerInterval = null;
+        }
+
+        function resetTimer() {
+            pauseTimer();
+            isWorkTime = true;
+            timerFinished = false;
+            workMinutes = parseInt(document.getElementById("workTime").value);
+            breakMinutes = parseInt(document.getElementById("breakTime").value);
+            secondsLeft = workMinutes * 60;
+            document.getElementById("status").textContent = "狀態：工作中";
+            updateTimerDisplay();
+            document.getElementById("nextModeBtn").style.display = "none"; // 隱藏「下一個模式」按鈕
+        }
+
+        function nextMode() {
+            timerFinished = false;
+            isWorkTime = !isWorkTime;
+            secondsLeft = isWorkTime ? workMinutes * 60 : breakMinutes * 60;
+            document.getElementById("status").textContent = 
+                isWorkTime ? "狀態：工作中" : "狀態：休息中";
+            updateTimerDisplay();
+            document.getElementById("nextModeBtn").style.display = "none"; // 隱藏「下一個模式」按鈕
+        }
+
+        function logAction(action) {
+            let logList = document.getElementById("logList");
+            let now = new Date();
+            let timeString = now.toLocaleTimeString();
+            let logItem = document.createElement("li");
+            logItem.className = "log-item";
+            logItem.textContent = `${action} - ${timeString}`;
+            logList.appendChild(logItem);
+        }
+
+        function clearLog() {
+            document.getElementById("logList").innerHTML = "";
+        }
+
+        updateTimerDisplay();
+    </script>
+</body>
+</html>
